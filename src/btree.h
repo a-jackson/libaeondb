@@ -1,9 +1,7 @@
-#ifndef __AEONDB_H_
-#define __AEONDB_H_
+#include <stdlib.h>
 
-void *aeon_initialise(char *_location, int location_length);
-void *aeon_tag_create(void *_dbhandle, char *_name, int name_length);
-void aeon_tag_save(void *_tag);
+#ifndef __AEON_BTREE_H_
+#define __AEON_BTREE_H_
 
 typedef struct _aeon_btree_node
 {
@@ -20,7 +18,16 @@ typedef struct _aeon_btree
     int order;
 } aeon_btree;
 
+aeon_btree_node *aeon_btree_node_create(aeon_btree *tree);
+
 aeon_btree *aeon_btree_create(int order);
+
+void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,
+        aeon_btree_node *_node, int median_index);
+
+void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
+        int value);
+
 void aeon_btree_insert(aeon_btree *_tree, int value);
 
 #endif
