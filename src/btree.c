@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "btree.h"
 
-
 aeon_btree_node *aeon_btree_node_create(aeon_btree *tree)
 {
     aeon_btree_node *node;
@@ -42,7 +41,8 @@ void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node,
     fpos_t node_pos;
     int i;
 
-    if (_node->leaf == 0)
+    // If this isn't a leaf and we aren't updating just this node, get the locations of the children.
+    if (_node->leaf == 0 && update == 0)
     {
         for (i = 0; i <= _node->value_count; i++)
         {
@@ -60,7 +60,7 @@ void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node,
     else
     {
         fgetpos(file, &node_pos);
-        _node->position = (unsigned long)node_pos.__pos;
+        _node->position = (unsigned long) node_pos.__pos;
     }
 
     fwrite(&_node->value_count, sizeof(unsigned int), 1, file);
@@ -68,6 +68,14 @@ void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node,
     fwrite(_node->keys, sizeof(unsigned long), (2 * _tree->order) - 1, file);
     fwrite(_node->children_positions, sizeof(unsigned long), 2 * _tree->order,
             file);
+}
+
+void aeon_btree_node_update(char *_file, aeon_btree *_tree,
+        aeon_btree_node *_node)
+{
+    FILE *file = fopen(_file, "wb");
+    aeon_btree_node_save(file, _tree, _node, 1);
+    fclose(file);
 }
 
 // Saves the entire tree to a new file.
@@ -82,7 +90,7 @@ void aeon_btree_save(aeon_btree *_tree, char *_file)
     fseek(file, sizeof(aeon_btree_header), SEEK_SET);
 
     aeon_btree_node_save(file, _tree, _tree->root, 0);
-    header.root_position  = _tree->root->position;
+    header.root_position = _tree->root->position;
 
     // Write the header.
     fseek(file, 0, SEEK_SET);
@@ -94,9 +102,43 @@ void aeon_btree_save(aeon_btree *_tree, char *_file)
     fclose(file);
 }
 
-void aeon_btree_load(aeon_btree *_tree, char *_file)
+void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node, FILE *file)
 {
+    int i = 0;
+    fread(&_node->value_count, sizeof(unsigned int), 1, file);
+    fread(&_node->leaf, sizeof(unsigned int), 1, file);
+    fread(_node->keys, sizeof(unsigned long), (2 * _tree->order) - 1, file);
+    fread(_node->children_positions, sizeof(unsigned long), 2 * _tree->order,
+            file);
+    while (i < (2 * _tree->order) && _node->children_positions[i] != 0)
+    {
+        fseek(file, _node->children_positions[i], SEEK_SET);
+        _node->children[i] = aeon_btree_node_create(_tree);
+        _node->children[i]->position = _node->children_positions[i];
+        aeon_btree_node_load(_tree, _node->children[i], file);
+        i++;
+    }
+}
 
+aeon_btree *aeon_btree_load(char *_file)
+{
+    FILE *file = fopen(_file, "rb");
+    aeon_btree_header header;
+    aeon_btree *tree;
+
+    fread(&header.magic_byte, sizeof(char), 1, file);
+    fread(&header.order, sizeof(unsigned int), 1, file);
+    fread(&header.node_size, sizeof(unsigned int), 1, file);
+    fread(&header.root_position, sizeof(unsigned long), 1, file);
+
+    tree = aeon_btree_create(header.order);
+
+    fseek(file, header.root_position, SEEK_SET);
+    tree->root->position = header.root_position;
+    aeon_btree_node_load(tree, tree->root, file);
+    fclose(file);
+
+    return tree;
 }
 
 void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,

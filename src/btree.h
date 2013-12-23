@@ -3,7 +3,6 @@
 #ifndef __AEON_BTREE_H_
 #define __AEON_BTREE_H_
 
-
 #define TREE_MAGIC_BYTE 0x0A
 
 typedef struct _aeon_btree_header
@@ -43,6 +42,11 @@ void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
 
 void aeon_btree_insert(aeon_btree *_tree, int value);
 void aeon_btree_save(aeon_btree *_tree, char *_file);
-void aeon_btree_load(aeon_btree *_tree, char *_file);
+void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node, FILE *file);
+aeon_btree *aeon_btree_load(char *_file);
+void aeon_btree_node_update(char *_file, aeon_btree *_tree,
+        aeon_btree_node *_node);
+void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node,
+        int update);
 
 #endif

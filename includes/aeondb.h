@@ -24,5 +24,6 @@ typedef struct _aeon_btree
 
 aeon_btree *aeon_btree_create(int order);
 void aeon_btree_insert(aeon_btree *_tree, int value);
+aeon_btree *aeon_btree_load(char *_file);
 
 #endif
