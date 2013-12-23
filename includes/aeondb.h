@@ -7,17 +7,19 @@ void aeon_tag_save(void *_tag);
 
 typedef struct _aeon_btree_node
 {
-    int* values;
-    int value_count;
-    int leaf;
+    unsigned long* keys;
+    unsigned int value_count;
+    unsigned int leaf;
     struct _aeon_btree_node **children;
-    struct _aeon_btree_node *parent;
+    unsigned long position;
+    unsigned long *children_positions;
 } aeon_btree_node;
 
 typedef struct _aeon_btree
 {
     struct _aeon_btree_node *root;
-    int order;
+    unsigned int order;
+    unsigned int node_size;
 } aeon_btree;
 
 aeon_btree *aeon_btree_create(int order);

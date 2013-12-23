@@ -3,19 +3,32 @@
 #ifndef __AEON_BTREE_H_
 #define __AEON_BTREE_H_
 
+
+#define TREE_MAGIC_BYTE 0x0A
+
+typedef struct _aeon_btree_header
+{
+    char magic_byte;
+    unsigned int order;
+    unsigned int node_size;
+    unsigned long root_position;
+} aeon_btree_header;
+
 typedef struct _aeon_btree_node
 {
-    int* values;
-    int value_count;
-    int leaf;
+    unsigned long* keys;
+    unsigned int value_count;
+    unsigned int leaf;
     struct _aeon_btree_node **children;
-    struct _aeon_btree_node *parent;
+    unsigned long position;
+    unsigned long *children_positions;
 } aeon_btree_node;
 
 typedef struct _aeon_btree
 {
     struct _aeon_btree_node *root;
-    int order;
+    unsigned int order;
+    unsigned int node_size;
 } aeon_btree;
 
 aeon_btree_node *aeon_btree_node_create(aeon_btree *tree);
@@ -29,5 +42,7 @@ void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
         int value);
 
 void aeon_btree_insert(aeon_btree *_tree, int value);
+void aeon_btree_save(aeon_btree *_tree, char *_file);
+void aeon_btree_load(aeon_btree *_tree, char *_file);
 
 #endif
