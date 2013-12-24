@@ -5,6 +5,14 @@ void *aeon_initialise(char *_location, int location_length);
 void *aeon_tag_create(void *_dbhandle, char *_name, int name_length);
 void aeon_tag_save(void *_tag);
 
+typedef struct _aeon_btree_header
+{
+    char magic_byte;
+    unsigned int order;
+    unsigned int node_size;
+    unsigned long root_position;
+} aeon_btree_header;
+
 typedef struct _aeon_btree_node
 {
     unsigned long* keys;
@@ -20,10 +28,28 @@ typedef struct _aeon_btree
     struct _aeon_btree_node *root;
     unsigned int order;
     unsigned int node_size;
+    char *file;
 } aeon_btree;
 
-aeon_btree *aeon_btree_create(int order);
+aeon_btree_node *aeon_btree_node_create(aeon_btree *tree);
+
+aeon_btree *aeon_btree_create(int order, char *_file, int file_length);
+
+void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,
+        aeon_btree_node *_node, int median_index);
+
+void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
+        int value);
+
 void aeon_btree_insert(aeon_btree *_tree, int value);
-aeon_btree *aeon_btree_load(char *_file);
+void aeon_btree_save(aeon_btree *_tree, int header_only);
+void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node, FILE *file);
+aeon_btree *aeon_btree_load(char *_file, int file_length);
+void aeon_btree_node_update(aeon_btree *_tree,
+        aeon_btree_node *_node);
+void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node,
+        int update);
+void aeon_btree_free(aeon_btree *_tree);
+void aeon_btree_node_free(aeon_btree_node *_node);
 
 #endif
