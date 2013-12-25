@@ -10,7 +10,8 @@ aeon_btree_node *aeon_btree_node_create(aeon_btree *tree)
 
     node = malloc(sizeof(aeon_btree_node));
 
-    node->keys = malloc(sizeof(unsigned long) * ((2 * tree->order) - 1));
+    node->keys = malloc(sizeof(KEY_TYPE) * ((2 * tree->order) - 1));
+    node->values = malloc(sizeof(KEY_TYPE) * ((2 * tree->order) - 1));
     node->value_count = 0;
     node->leaf = 1;
     node->children = calloc(2 * tree->order, sizeof(aeon_btree_node));
@@ -35,7 +36,8 @@ aeon_btree *aeon_btree_create(int order, char *_file, int file_length)
     tree->order = order;
     tree->root = aeon_btree_node_create(tree);
 
-    node_size = sizeof(unsigned long) * ((2 * order) - 1); // keys
+    node_size = sizeof(KEY_TYPE) * ((2 * order) - 1); // keys
+    node_size += sizeof(VALUE_TYPE) * ((2 * order) - 1); // Values
     node_size += sizeof(unsigned int) * 2; // value_count & leaf
     node_size += sizeof(unsigned long) * 2 * order; // children_positions
     tree->node_size = node_size;
@@ -63,7 +65,8 @@ void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node)
 
     fwrite(&_node->value_count, sizeof(unsigned int), 1, file);
     fwrite(&_node->leaf, sizeof(unsigned int), 1, file);
-    fwrite(_node->keys, sizeof(unsigned long), (2 * _tree->order) - 1, file);
+    fwrite(_node->keys, sizeof(KEY_TYPE), (2 * _tree->order) - 1, file);
+    fwrite(_node->values, sizeof(VALUE_TYPE), (2 * _tree->order) - 1, file);
     fwrite(_node->children_positions, sizeof(unsigned long), 2 * _tree->order,
             file);
     fflush(file);
@@ -119,7 +122,8 @@ void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node, FILE *file)
 {
     fread(&_node->value_count, sizeof(unsigned int), 1, file);
     fread(&_node->leaf, sizeof(unsigned int), 1, file);
-    fread(_node->keys, sizeof(unsigned long), (2 * _tree->order) - 1, file);
+    fread(_node->keys, sizeof(KEY_TYPE), (2 * _tree->order) - 1, file);
+    fread(_node->values, sizeof(VALUE_TYPE), (2 * _tree->order) - 1, file);
     fread(_node->children_positions, sizeof(unsigned long), 2 * _tree->order,
             file);
 }
@@ -159,6 +163,7 @@ void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,
     for (i = 0; i < _tree->order - 1; i++)
     {
         new_node->keys[i] = _child->keys[i + _tree->order];
+        new_node->values[i] = _child->values[i + _tree->order];
         if (_child->leaf == 0)
         {
             new_node->children[i] = _child->children[i + _tree->order];
@@ -196,6 +201,7 @@ void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,
     }
 
     _parent->keys[median_index] = _child->keys[_tree->order - 1];
+    _parent->values[median_index] = _child->values[_tree->order - 1];
     _parent->value_count++;
     aeon_btree_node_update(_tree, _parent);
     aeon_btree_node_free(new_node);
@@ -204,7 +210,7 @@ void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,
 
 // Inserts a key to the tree.
 void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
-        int value)
+        KEY_TYPE key, VALUE_TYPE value)
 {
     FILE *file;
     int i = _node->value_count - 1;
@@ -212,14 +218,16 @@ void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
     if (_node->leaf == 1)
     {
         // Loop down the nodes moving them all up 1 place until the space for the new value is reached.
-        while (i >= 0 && value < _node->keys[i])
+        while (i >= 0 && key < _node->keys[i])
         {
             _node->keys[i + 1] = _node->keys[i];
+            _node->values[i + 1] = _node->values[i];
             i--;
         }
 
         // Insert the new value.
-        _node->keys[i + 1] = value;
+        _node->keys[i + 1] = key;
+        _node->values[i + 1] = value;
         _node->value_count++;
         aeon_btree_node_update(_tree, _node);
     }
@@ -227,7 +235,7 @@ void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
     {
         // Node is full so need to identify the correct child.
 
-        while (i >= 0 && value < _node->keys[i])
+        while (i >= 0 && key < _node->keys[i])
         {
             i--;
         }
@@ -245,7 +253,7 @@ void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
         {
             aeon_btree_split(_tree, _node, _node->children[i], i);
 
-            if (value > _node->keys[i])
+            if (key > _node->keys[i])
             {
                 // Need the next child. Free this one.
                 aeon_btree_node_free(_node->children[i]);
@@ -261,7 +269,7 @@ void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
             }
         }
 
-        aeon_btree_node_insert(_tree, _node->children[i], value);
+        aeon_btree_node_insert(_tree, _node->children[i], key, value);
 
         aeon_btree_node_free(_node->children[i]);
         _node->children[i] = NULL;
@@ -277,7 +285,7 @@ void aeon_btree_save_new_node(aeon_btree *_tree, aeon_btree_node *_node)
 }
 
 // Inserts a value to the tree.
-void aeon_btree_insert(aeon_btree *_tree, int value)
+void aeon_btree_insert(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE value)
 {
     aeon_btree_node *node;
     aeon_btree_node *root = _tree->root;
@@ -297,7 +305,7 @@ void aeon_btree_insert(aeon_btree *_tree, int value)
         aeon_btree_save(_tree, 1);
 
         aeon_btree_split(_tree, node, root, 0);
-        aeon_btree_node_insert(_tree, node, value);
+        aeon_btree_node_insert(_tree, node, key, value);
 
         // Only need to leave root in memory so can unload the old root
         aeon_btree_node_free(root);
@@ -305,7 +313,7 @@ void aeon_btree_insert(aeon_btree *_tree, int value)
     }
     else
     {
-        aeon_btree_node_insert(_tree, root, value);
+        aeon_btree_node_insert(_tree, root, key, value);
     }
 }
 
@@ -319,12 +327,14 @@ void aeon_btree_free(aeon_btree *_tree)
 // Frees a tree node.
 void aeon_btree_node_free(aeon_btree_node *_node)
 {
-    if (_node == NULL) {
+    if (_node == NULL )
+    {
         return;
     }
 
     int i;
     free(_node->keys);
+    free(_node->values);
     free(_node->children_positions);
 
     if (_node->leaf == 0)
