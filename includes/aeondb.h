@@ -33,7 +33,8 @@ typedef struct _aeon_btree
     struct _aeon_btree_node *root;
     unsigned int order;
     unsigned int node_size;
-    char *file;
+    char *file_name;
+    FILE *file;
 } aeon_btree;
 
 aeon_btree_node *aeon_btree_node_create(aeon_btree *tree);
@@ -48,11 +49,12 @@ void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
 
 void aeon_btree_insert(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE value);
 void aeon_btree_save(aeon_btree *_tree, int header_only);
-void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node, FILE *file);
+void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node);
 aeon_btree *aeon_btree_load(char *_file, int file_length);
-void aeon_btree_node_update(aeon_btree *_tree, aeon_btree_node *_node);
 void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node);
 void aeon_btree_free(aeon_btree *_tree);
 void aeon_btree_node_free(aeon_btree_node *_node);
 void aeon_btree_save_new_node(aeon_btree *_tree, aeon_btree_node *_node);
+void aeon_btree_open(aeon_btree *_tree, int new_file);
+void aeon_btree_close(aeon_btree *_tree);
 #endif
