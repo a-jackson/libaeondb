@@ -293,6 +293,44 @@ void aeon_btree_insert(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE value)
     }
 }
 
+int aeon_btree_node_get_value(aeon_btree *_tree, aeon_btree_node *_node,
+        KEY_TYPE key, VALUE_TYPE *value)
+{
+    int result;
+    int i = 0;
+    while (i < _node->value_count && key > _node->keys[i])
+    {
+        i++;
+    }
+
+    if (i < _node->value_count && key == _node->keys[i])
+    {
+        *value = _node->values[i];
+        result = 1;
+    }
+    else if (_node->leaf == 1)
+    {
+        result = 0;
+    }
+    else
+    {
+        _node->children[i] = aeon_btree_node_create(_tree);
+        _node->children[i]->position = _node->children_positions[i];
+        aeon_btree_node_load(_tree, _node->children[i]);
+        result = aeon_btree_node_get_value(_tree, _node->children[i], key,
+                value);
+        aeon_btree_node_free(_node->children[i]);
+        _node->children[i] = NULL;
+    }
+
+    return result;
+}
+
+int aeon_btree_get_value(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE *value)
+{
+    return aeon_btree_node_get_value(_tree, _tree->root, key, value);
+}
+
 void aeon_btree_open(aeon_btree *_tree, int new_file)
 {
     if (new_file == 1)

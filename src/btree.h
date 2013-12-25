@@ -57,5 +57,8 @@ void aeon_btree_save_new_node(aeon_btree *_tree, aeon_btree_node *_node);
 
 void aeon_btree_open(aeon_btree *_tree, int new_file);
 void aeon_btree_close(aeon_btree *_tree);
+int aeon_btree_node_get_value(aeon_btree *_tree, aeon_btree_node *_node,
+        KEY_TYPE key, VALUE_TYPE *value);
+int aeon_btree_get_value(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE *value);
 
 #endif
