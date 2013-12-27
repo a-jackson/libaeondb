@@ -29,9 +29,9 @@ typedef struct
 } aeon_tag_db;
 
 void *aeon_tag_create(void *_tagdb, char *_name, int name_length);
-void aeon_tag_free(void *_tag);
 void *aeon_tags_load(void *_dbhandle);
 void aeon_tag_save(void *_tag, void *_tagdb);
+void aeon_tag_free(void *_tag);
 void aeon_tag_database_initialise(char *tag_database_location);
 aeon_tag_header aeon_tag_header_load(FILE *file);
 void aeon_tag_header_update(aeon_tag_header *header, FILE *file);

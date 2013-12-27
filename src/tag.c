@@ -98,13 +98,14 @@ void aeon_tag_save(void *_tag, void *_tagdb)
     }
 
     tag_db->tags[i] = tag;
-    tag->tag_id = tag_db->header->tag_count;
     tag_db->header->tag_count++;
+    tag->tag_id = tag_db->header->tag_count;
     free(existing_tags);
 
     tag_database = fopen(tag_db->tag_db_location, "r+b");
     aeon_tag_header_update(tag_db->header, tag_database);
 
+    fseek(tag_database, 0, SEEK_END);
     fwrite(&tag->tag_id, sizeof(unsigned int), 1, tag_database);
     fwrite(&tag->tag_name_length, sizeof(unsigned int), 1, tag_database);
     fwrite(tag->tag_name, sizeof(char), tag_db->tags[i]->tag_name_length,
