@@ -22,6 +22,19 @@ void *aeon_tag_create(void *_tagdb, char *_name, int name_length)
     return tag;
 }
 
+void aeon_tag_db_free(void *_tagdb)
+{
+    aeon_tag_db *tagdb = (aeon_tag_db *)_tagdb;
+    int i;
+    for (i = 0; i < tagdb->header->tag_count; i++) {
+        aeon_tag_free(tagdb->tags[i]);
+    }
+
+    free(tagdb->tags);
+    free(tagdb->header);
+    free(tagdb);
+}
+
 void aeon_tag_free(void *_tag)
 {
     aeon_tag *tag = (aeon_tag *) _tag;

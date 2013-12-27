@@ -35,6 +35,6 @@ void aeon_tag_free(void *_tag);
 void aeon_tag_database_initialise(char *tag_database_location);
 aeon_tag_header aeon_tag_header_load(FILE *file);
 void aeon_tag_header_update(aeon_tag_header *header, FILE *file);
-
+void aeon_tag_db_free(void *_tagdb);
 
 #endif

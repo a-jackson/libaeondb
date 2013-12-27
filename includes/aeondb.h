@@ -5,6 +5,7 @@ void *aeon_initialise(char *_location, int location_length);
 void *aeon_tag_create(void *_tagdb, char *_name, int name_length);
 void *aeon_tags_load(void *_dbhandle);
 void aeon_tag_save(void *_tag, void *_tagdb);
+void aeon_tag_db_free(void *_tagdb);
 
 #define TREE_MAGIC_BYTE 0x0A
 #define KEY_TYPE unsigned long
