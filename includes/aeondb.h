@@ -4,6 +4,7 @@
 void *aeon_initialise(char *_location, int location_length);
 void *aeon_tag_create(void *_tagdb, char *_name, int name_length);
 void *aeon_tags_load(void *_dbhandle);
+void *aeon_tag_get(void *_tagdb, char *tag);
 void aeon_tag_save(void *_tag, void *_tagdb);
 void aeon_tag_db_free(void *_tagdb);
 
@@ -62,4 +63,9 @@ void aeon_btree_close(aeon_btree *_tree);
 int aeon_btree_node_get_value(aeon_btree *_tree, aeon_btree_node *_node,
         KEY_TYPE key, VALUE_TYPE *value);
 int aeon_btree_get_value(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE *value);
+
+void *aeon_timestore_initialise(void *_tag);
+int aeon_timestore_add(void *_timestore, void *value, unsigned long time);
+void aeon_timestore_free(void *_timestore);
+
 #endif

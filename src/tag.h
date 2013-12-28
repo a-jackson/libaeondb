@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "db.h"
 
 #ifndef __AEON_TAG_H_
@@ -30,6 +31,7 @@ typedef struct
 
 void *aeon_tag_create(void *_tagdb, char *_name, int name_length);
 void *aeon_tags_load(void *_dbhandle);
+void *aeon_tag_get(void *_tagdb, char *tag);
 void aeon_tag_save(void *_tag, void *_tagdb);
 void aeon_tag_free(void *_tag);
 void aeon_tag_database_initialise(char *tag_database_location);

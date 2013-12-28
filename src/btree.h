@@ -60,5 +60,6 @@ void aeon_btree_close(aeon_btree *_tree);
 int aeon_btree_node_get_value(aeon_btree *_tree, aeon_btree_node *_node,
         KEY_TYPE key, VALUE_TYPE *value);
 int aeon_btree_get_value(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE *value);
+aeon_btree *aeon_btree_initialise(int order, char *_file, int file_length);
 
 #endif

@@ -24,9 +24,10 @@ void *aeon_tag_create(void *_tagdb, char *_name, int name_length)
 
 void aeon_tag_db_free(void *_tagdb)
 {
-    aeon_tag_db *tagdb = (aeon_tag_db *)_tagdb;
+    aeon_tag_db *tagdb = (aeon_tag_db *) _tagdb;
     int i;
-    for (i = 0; i < tagdb->header->tag_count; i++) {
+    for (i = 0; i < tagdb->header->tag_count; i++)
+    {
         aeon_tag_free(tagdb->tags[i]);
     }
 
@@ -93,6 +94,22 @@ void *aeon_tags_load(void *_dbhandle)
 
     fclose(file);
     return tag_db;
+}
+
+void *aeon_tag_get(void *_tagdb, char *tag)
+{
+    aeon_tag_db *tagdb = (aeon_tag_db *) _tagdb;
+    int i;
+
+    for (i = 0; i < tagdb->header->tag_count; i++)
+    {
+        if (strcmp(tag, tagdb->tags[i]->tag_name) == 0)
+        {
+            return tagdb->tags[i];
+        }
+    }
+
+    return NULL ;
 }
 
 void aeon_tag_save(void *_tag, void *_tagdb)

@@ -344,6 +344,10 @@ void aeon_btree_open(aeon_btree *_tree, int new_file)
 
 void aeon_btree_close(aeon_btree *_tree)
 {
+    if (_tree->file == NULL) {
+        return;
+    }
+
     fclose(_tree->file);
     _tree->file = NULL;
 }
@@ -351,6 +355,7 @@ void aeon_btree_close(aeon_btree *_tree)
 // Frees a tree.
 void aeon_btree_free(aeon_btree *_tree)
 {
+    aeon_btree_close(_tree);
     aeon_btree_node_free(_tree->root);
     free(_tree);
 }
@@ -380,4 +385,20 @@ void aeon_btree_node_free(aeon_btree_node *_node)
     free(_node->children);
 
     free(_node);
+}
+
+aeon_btree *aeon_btree_initialise(int order, char *_file, int file_length)
+{
+    aeon_btree *tree;
+    FILE *file;
+    file = fopen(_file, "rb");
+    if (file == 0) {
+        tree = aeon_btree_create(order, _file, file_length);
+        aeon_btree_open(tree, 1);
+        aeon_btree_save(tree, 0);
+        aeon_btree_close(tree);
+        aeon_btree_free(tree);
+    }
+
+    return aeon_btree_load(_file, file_length);
 }
