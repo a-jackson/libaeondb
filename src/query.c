@@ -18,6 +18,7 @@ void *aeon_query_create(void *_tag, unsigned long start_time,
     query->start_time = start_time;
     query->end_time = end_time;
     query->current_page = malloc(sizeof(aeon_timestore_page));
+    query->current_page->page_data = NULL;
     query->current_page_value = 0;
     query->current_value = malloc(AEON_TIMESTORE_DATA_SIZE);
     query->current_value_time = 0;

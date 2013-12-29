@@ -15,6 +15,7 @@ typedef struct
     unsigned long size;
     unsigned long page_location;
     unsigned int value_count;
+    void *page_data;
 } aeon_timestore_page;
 
 typedef struct

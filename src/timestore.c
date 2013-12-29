@@ -210,11 +210,24 @@ void aeon_timestore_free(void *_timestore)
 void aeon_timestore_page_load(aeon_timestore *_timestore,
         aeon_timestore_page *_page, unsigned long page_location)
 {
+    int data_size;
+
+    if (_page->page_data != NULL )
+    {
+        free(_page->page_data);
+        _page->page_data = NULL;
+    }
+
     _page->page_location = page_location;
     fseek(_timestore->file, _page->page_location, SEEK_SET);
     fread(&_page->page_time, sizeof(unsigned long), 1, _timestore->file);
     fread(&_page->size, sizeof(unsigned long), 1, _timestore->file);
     fread(&_page->value_count, sizeof(unsigned int), 1, _timestore->file);
+
+    data_size = _page->size - sizeof(unsigned long) - sizeof(unsigned long)
+            - sizeof(unsigned int);
+    _page->page_data = malloc(data_size);
+    fread(_page->page_data, data_size, 1, _timestore->file);
 }
 
 int aeon_timestore_getvalue(aeon_timestore *_timestore,
@@ -222,19 +235,21 @@ int aeon_timestore_getvalue(aeon_timestore *_timestore,
         void *value)
 {
     int value_position;
+    void *time_pos;
+    void *val_pos;
 
-    if (value_id >= _page->value_count || value_id < 0)
+    if (value_id >= _page->value_count || value_id < 0 || _page->page_data == NULL)
     {
         return 0;
     }
 
-    value_position = _page->page_location + sizeof(unsigned long)
-            + sizeof(unsigned long) + sizeof(unsigned int);
-    value_position += value_id
+    value_position = value_id
             * (sizeof(unsigned long) + AEON_TIMESTORE_DATA_SIZE);
 
-    fseek(_timestore->file, value_position, SEEK_SET);
-    fread(time, sizeof(unsigned long), 1, _timestore->file);
-    fread(value, AEON_TIMESTORE_DATA_SIZE, 1, _timestore->file);
+    time_pos = _page->page_data + value_position;
+    val_pos = time_pos + sizeof(unsigned long);
+
+    memcpy(time, time_pos, sizeof(unsigned long));
+    memcpy(value, val_pos, sizeof(unsigned long));
     return 1;
 }
