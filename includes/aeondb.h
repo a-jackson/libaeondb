@@ -68,4 +68,9 @@ void *aeon_timestore_initialise(void *_tag);
 int aeon_timestore_add(void *_timestore, void *value, unsigned long time);
 void aeon_timestore_free(void *_timestore);
 
+void *aeon_query_create(void *_tag, unsigned long start_time, unsigned long end_time);
+int aeon_query_move_next(void *_query);
+int aeon_query_current_value(void *_query, unsigned long *time, void *value);
+void aeon_query_free(void *_query);
+
 #endif

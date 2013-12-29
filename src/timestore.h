@@ -39,5 +39,10 @@ void aeon_timestore_update_page_header(aeon_timestore *_timestore,
 unsigned long aeon_timestore_file_end(aeon_timestore *_timestore);
 int aeon_timestore_add(void *_timestore, void *value, unsigned long time);
 void aeon_timestore_free(void *_timestore);
+void aeon_timestore_page_load(aeon_timestore *_timestore,
+        aeon_timestore_page *_page, unsigned long page_location);
+int aeon_timestore_getvalue(aeon_timestore *_timestore,
+        aeon_timestore_page *_page, int value_id, unsigned long *time,
+        void *value);
 
 #endif

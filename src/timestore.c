@@ -33,7 +33,8 @@ void *aeon_timestore_initialise(void *_tag)
     timestore->tag = tag;
     timestore->index = aeon_btree_initialise(2, index_location,
             strlen(index_location) + 1);
-    timestore->timestore_location_length = (int)(strlen(timestore_location) + 1);
+    timestore->timestore_location_length =
+            (int) (strlen(timestore_location) + 1);
     timestore->timestore_location = timestore_location;
     timestore->last_time_saved = 0;
     timestore->current_page = NULL;
@@ -124,7 +125,7 @@ int aeon_timestore_add(void *_timestore, void *value, unsigned long time)
     unsigned long page_time;
     unsigned long current_page_time;
     unsigned long page_location;
-    aeon_timestore *timestore = (aeon_timestore *)_timestore;
+    aeon_timestore *timestore = (aeon_timestore *) _timestore;
 
     if (time < timestore->last_time_saved)
     {
@@ -198,4 +199,36 @@ void aeon_timestore_free(void *_timestore)
     aeon_btree_free(timestore->index);
 
     free(timestore);
+}
+
+void aeon_timestore_page_load(aeon_timestore *_timestore,
+        aeon_timestore_page *_page, unsigned long page_location)
+{
+    _page->page_location = page_location;
+    fseek(_timestore->file, _page->page_location, SEEK_SET);
+    fread(&_page->page_time, sizeof(unsigned long), 1, _timestore->file);
+    fread(&_page->size, sizeof(unsigned long), 1, _timestore->file);
+    fread(&_page->value_count, sizeof(unsigned int), 1, _timestore->file);
+}
+
+int aeon_timestore_getvalue(aeon_timestore *_timestore,
+        aeon_timestore_page *_page, int value_id, unsigned long *time,
+        void *value)
+{
+    int value_position;
+
+    if (value_id >= _page->value_count || value_id < 0)
+    {
+        return 0;
+    }
+
+    value_position = _page->page_location + sizeof(unsigned long)
+            + sizeof(unsigned long) + sizeof(unsigned int);
+    value_position += value_id
+            * (sizeof(unsigned long) + AEON_TIMESTORE_DATA_SIZE);
+
+    fseek(_timestore->file, value_position, SEEK_SET);
+    fread(time, sizeof(unsigned long), 1, _timestore->file);
+    fread(value, AEON_TIMESTORE_DATA_SIZE, 1, _timestore->file);
+    return 1;
 }
