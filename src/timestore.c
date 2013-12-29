@@ -31,12 +31,13 @@ void *aeon_timestore_initialise(void *_tag)
 
     timestore->dbhandle = tag->dbhandle;
     timestore->tag = tag;
-    timestore->index = aeon_btree_initialise(2, index_location,
+    timestore->index = aeon_btree_initialise(100, index_location,
             strlen(index_location) + 1);
     timestore->timestore_location_length =
             (int) (strlen(timestore_location) + 1);
     timestore->timestore_location = timestore_location;
     timestore->last_time_saved = 0;
+    timestore->first_time_saved = 0;
     timestore->current_page = NULL;
     timestore->current_page_location = 0;
     timestore->page_count = 0;
@@ -61,6 +62,8 @@ void aeon_timestore_open(aeon_timestore *_timestore)
 
     _timestore->file = fopen(_timestore->timestore_location, "r+b");
     fread(&magic_byte, sizeof(char), 1, _timestore->file);
+    fread(&_timestore->first_time_saved, sizeof(unsigned long), 1,
+            _timestore->file);
     fread(&_timestore->last_time_saved, sizeof(unsigned long), 1,
             _timestore->file);
     fread(&_timestore->page_count, sizeof(unsigned int), 1, _timestore->file);
@@ -91,6 +94,8 @@ void aeon_timestore_update_header(aeon_timestore *_timestore)
     char magic_byte = AEON_TIMESTORE_MAGIC_BYTE;
     fseek(_timestore->file, 0, SEEK_SET);
     fwrite(&magic_byte, sizeof(char), 1, _timestore->file);
+    fwrite(&_timestore->first_time_saved, sizeof(unsigned long), 1,
+            _timestore->file);
     fwrite(&_timestore->last_time_saved, sizeof(unsigned long), 1,
             _timestore->file);
     fwrite(&_timestore->page_count, sizeof(unsigned int), 1, _timestore->file);
@@ -141,11 +146,12 @@ int aeon_timestore_add(void *_timestore, void *value, unsigned long time)
         timestore->current_page->page_location = page_location;
         timestore->current_page->page_time = page_time;
         timestore->current_page->value_count = 0;
-        timestore->current_page->size = (sizeof(unsigned long) * 3)
+        timestore->current_page->size = (sizeof(unsigned long) * 2)
                 + sizeof(unsigned int);
         aeon_timestore_update_page_header(_timestore, timestore->current_page);
         aeon_btree_insert(timestore->index, page_time, page_location);
 
+        timestore->first_time_saved = time;
         timestore->page_count++;
         timestore->current_page_location = page_location;
     }
@@ -160,7 +166,7 @@ int aeon_timestore_add(void *_timestore, void *value, unsigned long time)
         timestore->current_page->page_location = page_location;
         timestore->current_page->page_time = current_page_time;
         timestore->current_page->value_count = 0;
-        timestore->current_page->size = (sizeof(unsigned long) * 3)
+        timestore->current_page->size = (sizeof(unsigned long) * 2)
                 + sizeof(unsigned int);
         aeon_timestore_update_page_header(_timestore, timestore->current_page);
         aeon_btree_insert(timestore->index, current_page_time, page_location);

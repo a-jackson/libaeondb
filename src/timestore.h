@@ -25,6 +25,7 @@ typedef struct
     char *timestore_location;
     int timestore_location_length;
     unsigned long last_time_saved;
+    unsigned long first_time_saved;
     FILE *file;
     aeon_timestore_page *current_page;
     unsigned int page_count;

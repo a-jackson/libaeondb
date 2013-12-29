@@ -28,6 +28,11 @@ void *aeon_query_create(void *_tag, unsigned long start_time,
         query->end_time = query->timestore->last_time_saved;
     }
 
+    if (start_time < query->timestore->first_time_saved)
+    {
+        query->start_time = query->timestore->first_time_saved;
+    }
+
     start_time_result = aeon_btree_get_value(query->timestore->index,
             start_page_time, &start_page_position);
 
@@ -46,13 +51,16 @@ void *aeon_query_create(void *_tag, unsigned long start_time,
 int aeon_query_move_next(void *_query)
 {
     aeon_query *query = (aeon_query *) _query;
-    int next_page_position;
+    unsigned long next_page_position;
 
-    aeon_timestore_getvalue(query->timestore, query->current_page,
+    if (aeon_timestore_getvalue(query->timestore, query->current_page,
             query->current_page_value, &query->current_value_time,
-            query->current_value);
+            query->current_value) == 0)
+    {
+        return 0;
+    }
 
-    if (query->current_value_time > query->end_time)
+    if (query->current_value_time >= query->end_time)
     {
         return 0;
     }
@@ -62,8 +70,10 @@ int aeon_query_move_next(void *_query)
     // Use a loop to handle empty pages.
     while (query->current_page_value >= query->current_page->value_count)
     {
-        next_page_position = query->current_page->page_location + query->current_page->size;
-        aeon_timestore_page_load(query->timestore, query->current_page, next_page_position);
+        next_page_position = query->current_page->page_location
+                + query->current_page->size;
+        aeon_timestore_page_load(query->timestore, query->current_page,
+                next_page_position);
         query->current_page_value = 0;
     }
 
