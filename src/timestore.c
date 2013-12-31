@@ -50,8 +50,6 @@ void *aeon_timestore_initialise(void *_tag)
 
 void aeon_timestore_open(aeon_timestore *_timestore)
 {
-    char magic_byte = AEON_TIMESTORE_MAGIC_BYTE;
-
     _timestore->file = fopen(_timestore->timestore_location, "r+b");
     if (_timestore->file == 0)
     {
@@ -61,7 +59,6 @@ void aeon_timestore_open(aeon_timestore *_timestore)
     }
 
     _timestore->file = fopen(_timestore->timestore_location, "r+b");
-    fread(&magic_byte, sizeof(char), 1, _timestore->file);
     fread(&_timestore->first_time_saved, sizeof(unsigned long), 1,
             _timestore->file);
     fread(&_timestore->last_time_saved, sizeof(unsigned long), 1,
@@ -91,15 +88,13 @@ void aeon_timestore_open(aeon_timestore *_timestore)
 
 void aeon_timestore_update_header(aeon_timestore *_timestore)
 {
-    char magic_byte = AEON_TIMESTORE_MAGIC_BYTE;
     fseek(_timestore->file, 0, SEEK_SET);
-    fwrite(&magic_byte, sizeof(char), 1, _timestore->file);
-    fwrite(&_timestore->first_time_saved, sizeof(unsigned long), 1,
+    fwrite(&_timestore->first_time_saved, sizeof(aeon_time_t), 1,
             _timestore->file);
-    fwrite(&_timestore->last_time_saved, sizeof(unsigned long), 1,
+    fwrite(&_timestore->last_time_saved, sizeof(aeon_time_t), 1,
             _timestore->file);
-    fwrite(&_timestore->page_count, sizeof(unsigned int), 1, _timestore->file);
-    fwrite(&_timestore->current_page_location, sizeof(unsigned long), 1,
+    fwrite(&_timestore->page_count, sizeof(aeon_count_t), 1, _timestore->file);
+    fwrite(&_timestore->current_page_location, sizeof(aeon_pos_t), 1,
             _timestore->file);
     fflush(_timestore->file);
 }
@@ -108,11 +103,11 @@ void aeon_timestore_update_page_header(aeon_timestore *_timestore,
         aeon_timestore_page *_page)
 {
     fseek(_timestore->file, _page->page_location, SEEK_SET);
-    fwrite(&_timestore->current_page->page_time, sizeof(unsigned long), 1,
+    fwrite(&_timestore->current_page->page_time, sizeof(aeon_time_t), 1,
             _timestore->file);
-    fwrite(&_timestore->current_page->size, sizeof(unsigned long), 1,
+    fwrite(&_timestore->current_page->size, sizeof(aeon_size_t), 1,
             _timestore->file);
-    fwrite(&_timestore->current_page->value_count, sizeof(unsigned int), 1,
+    fwrite(&_timestore->current_page->value_count, sizeof(aeon_count_t), 1,
             _timestore->file);
     fflush(_timestore->file);
 }
@@ -125,11 +120,11 @@ unsigned long aeon_timestore_file_end(aeon_timestore *_timestore)
     return pos.__pos;
 }
 
-int aeon_timestore_add(void *_timestore, void *value, unsigned long time)
+int aeon_timestore_add(void *_timestore, void *value, aeon_time_t time)
 {
-    unsigned long page_time;
-    unsigned long current_page_time;
-    unsigned long page_location;
+    aeon_time_t page_time;
+    aeon_time_t current_page_time;
+    aeon_pos_t page_location;
     aeon_timestore *timestore = (aeon_timestore *) _timestore;
 
     if (time < timestore->last_time_saved)
@@ -146,8 +141,8 @@ int aeon_timestore_add(void *_timestore, void *value, unsigned long time)
         timestore->current_page->page_location = page_location;
         timestore->current_page->page_time = page_time;
         timestore->current_page->value_count = 0;
-        timestore->current_page->size = (sizeof(unsigned long) * 2)
-                + sizeof(unsigned int);
+        timestore->current_page->size = sizeof(aeon_time_t)
+                + sizeof(aeon_size_t) + sizeof(aeon_count_t);
         aeon_timestore_update_page_header(_timestore, timestore->current_page);
         aeon_btree_insert(timestore->index, page_time, page_location);
 
@@ -166,8 +161,8 @@ int aeon_timestore_add(void *_timestore, void *value, unsigned long time)
         timestore->current_page->page_location = page_location;
         timestore->current_page->page_time = current_page_time;
         timestore->current_page->value_count = 0;
-        timestore->current_page->size = (sizeof(unsigned long) * 2)
-                + sizeof(unsigned int);
+        timestore->current_page->size = sizeof(aeon_time_t)
+                + sizeof(aeon_size_t) + sizeof(aeon_count_t);
         aeon_timestore_update_page_header(_timestore, timestore->current_page);
         aeon_btree_insert(timestore->index, current_page_time, page_location);
 
@@ -177,12 +172,12 @@ int aeon_timestore_add(void *_timestore, void *value, unsigned long time)
 
     // Add value to end of file.
     fseek(timestore->file, 0, SEEK_END);
-    fwrite(&time, sizeof(unsigned long), 1, timestore->file);
+    fwrite(&time, sizeof(aeon_time_t), 1, timestore->file);
     fwrite(value, AEON_TIMESTORE_DATA_SIZE, 1, timestore->file);
     fflush(timestore->file);
 
     timestore->current_page->value_count++;
-    timestore->current_page->size += sizeof(unsigned long)
+    timestore->current_page->size += sizeof(aeon_time_t)
             + AEON_TIMESTORE_DATA_SIZE;
     timestore->last_time_saved = time;
 
@@ -208,7 +203,7 @@ void aeon_timestore_free(void *_timestore)
 }
 
 void aeon_timestore_page_load(aeon_timestore *_timestore,
-        aeon_timestore_page *_page, unsigned long page_location)
+        aeon_timestore_page *_page, aeon_pos_t page_location)
 {
     int data_size;
 
@@ -220,36 +215,36 @@ void aeon_timestore_page_load(aeon_timestore *_timestore,
 
     _page->page_location = page_location;
     fseek(_timestore->file, _page->page_location, SEEK_SET);
-    fread(&_page->page_time, sizeof(unsigned long), 1, _timestore->file);
-    fread(&_page->size, sizeof(unsigned long), 1, _timestore->file);
-    fread(&_page->value_count, sizeof(unsigned int), 1, _timestore->file);
+    fread(&_page->page_time, sizeof(aeon_time_t), 1, _timestore->file);
+    fread(&_page->size, sizeof(aeon_size_t), 1, _timestore->file);
+    fread(&_page->value_count, sizeof(aeon_count_t), 1, _timestore->file);
 
-    data_size = _page->size - sizeof(unsigned long) - sizeof(unsigned long)
-            - sizeof(unsigned int);
+    data_size = _page->size - sizeof(aeon_time_t) - sizeof(aeon_size_t)
+            - sizeof(aeon_count_t);
     _page->page_data = malloc(data_size);
     fread(_page->page_data, data_size, 1, _timestore->file);
 }
 
 int aeon_timestore_getvalue(aeon_timestore *_timestore,
-        aeon_timestore_page *_page, int value_id, unsigned long *time,
+        aeon_timestore_page *_page, int value_id, aeon_time_t *time,
         void *value)
 {
-    int value_position;
+    aeon_pos_t value_position;
     void *time_pos;
     void *val_pos;
 
-    if (value_id >= _page->value_count || value_id < 0 || _page->page_data == NULL)
-    {
+    if (value_id
+            >= _page->value_count|| value_id < 0 || _page->page_data == NULL){
         return 0;
     }
 
     value_position = value_id
-            * (sizeof(unsigned long) + AEON_TIMESTORE_DATA_SIZE);
+            * (sizeof(aeon_time_t) + AEON_TIMESTORE_DATA_SIZE);
 
     time_pos = _page->page_data + value_position;
-    val_pos = time_pos + sizeof(unsigned long);
+    val_pos = time_pos + sizeof(aeon_time_t);
 
-    memcpy(time, time_pos, sizeof(unsigned long));
-    memcpy(value, val_pos, sizeof(unsigned long));
+    memcpy(time, time_pos, sizeof(aeon_time_t));
+    memcpy(value, val_pos, AEON_TIMESTORE_DATA_SIZE);
     return 1;
 }

@@ -1,76 +1,26 @@
 #ifndef __AEONDB_H_
 #define __AEONDB_H_
 
+#include <stdint.h>
+
+typedef int64_t aeon_time_t;
+typedef uint64_t aeon_pos_t;
+typedef uint64_t aeon_size_t;
+typedef uint32_t aeon_count_t;
+
+
 void *aeon_initialise(char *_location, int location_length);
-void *aeon_tag_create(void *_tagdb, char *_name, int name_length);
+void *aeon_query_create(void *_tag, aeon_time_t start_time, aeon_time_t end_time);
+int aeon_query_move_next(void *_query);
+int aeon_query_current_value(void *_query, aeon_time_t *time, void *value);
+void aeon_query_free(void *_query);
+void *aeon_tag_create(void *_tagdb, char *_name, uint32_t name_length);
 void *aeon_tags_load(void *_dbhandle);
 void *aeon_tag_get(void *_tagdb, char *tag);
 void aeon_tag_save(void *_tag, void *_tagdb);
 void aeon_tag_db_free(void *_tagdb);
-
-#define TREE_MAGIC_BYTE 0x0A
-#define KEY_TYPE unsigned long
-#define VALUE_TYPE unsigned long
-
-typedef struct _aeon_btree_header
-{
-    char magic_byte;
-    unsigned int order;
-    unsigned int node_size;
-    unsigned long root_position;
-} aeon_btree_header;
-
-typedef struct _aeon_btree_node
-{
-    KEY_TYPE* keys;
-    VALUE_TYPE *values;
-    unsigned int value_count;
-    unsigned int leaf;
-    struct _aeon_btree_node **children;
-    unsigned long position;
-    unsigned long *children_positions;
-} aeon_btree_node;
-
-typedef struct _aeon_btree
-{
-    struct _aeon_btree_node *root;
-    unsigned int order;
-    unsigned int node_size;
-    char *file_name;
-    FILE *file;
-} aeon_btree;
-
-aeon_btree_node *aeon_btree_node_create(aeon_btree *tree);
-
-aeon_btree *aeon_btree_create(int order, char *_file, int file_length);
-
-void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,
-        aeon_btree_node *_node, int median_index);
-
-void aeon_btree_node_insert(aeon_btree *_tree, aeon_btree_node *_node,
-        KEY_TYPE key, VALUE_TYPE value);
-
-void aeon_btree_insert(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE value);
-void aeon_btree_save(aeon_btree *_tree, int header_only);
-void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node);
-aeon_btree *aeon_btree_load(char *_file, int file_length);
-void aeon_btree_node_save(FILE *file, aeon_btree *_tree, aeon_btree_node *_node);
-void aeon_btree_free(aeon_btree *_tree);
-void aeon_btree_node_free(aeon_btree_node *_node);
-void aeon_btree_save_new_node(aeon_btree *_tree, aeon_btree_node *_node);
-void aeon_btree_open(aeon_btree *_tree, int new_file);
-void aeon_btree_close(aeon_btree *_tree);
-int aeon_btree_node_get_value(aeon_btree *_tree, aeon_btree_node *_node,
-        KEY_TYPE key, VALUE_TYPE *value);
-int aeon_btree_get_value(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE *value);
-
 void *aeon_timestore_initialise(void *_tag);
-int aeon_timestore_add(void *_timestore, void *value, unsigned long time);
+int aeon_timestore_add(void *_timestore, void *value, aeon_time_t time);
 void aeon_timestore_free(void *_timestore);
-
-void *aeon_query_create(void *_tag, unsigned long start_time, unsigned long end_time);
-int aeon_query_move_next(void *_query);
-int aeon_query_current_value(void *_query, unsigned long *time, void *value);
-void aeon_query_free(void *_query);
 
 #endif

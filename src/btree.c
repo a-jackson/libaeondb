@@ -15,17 +15,17 @@ aeon_btree_node *aeon_btree_node_create(aeon_btree *tree)
     node->value_count = 0;
     node->leaf = 1;
     node->children = calloc(2 * tree->order, sizeof(aeon_btree_node));
-    node->children_positions = malloc(sizeof(unsigned long) * 2 * tree->order);
+    node->children_positions = malloc(sizeof(aeon_pos_t) * 2 * tree->order);
     node->position = 0;
 
     return node;
 }
 
 // Create a tree
-aeon_btree *aeon_btree_create(int order, char *_file, int file_length)
+aeon_btree *aeon_btree_create(uint32_t order, char *_file, int file_length)
 {
     aeon_btree *tree;
-    unsigned int node_size;
+    aeon_size_t node_size;
     char *file;
 
     file = malloc(sizeof(char) * file_length);
@@ -38,8 +38,8 @@ aeon_btree *aeon_btree_create(int order, char *_file, int file_length)
 
     node_size = sizeof(KEY_TYPE) * ((2 * order) - 1); // keys
     node_size += sizeof(VALUE_TYPE) * ((2 * order) - 1); // Values
-    node_size += sizeof(unsigned int) * 2; // value_count & leaf
-    node_size += sizeof(unsigned long) * 2 * order; // children_positions
+    node_size += sizeof(aeon_count_t) + sizeof(uint32_t); // value_count & leaf
+    node_size += sizeof(aeon_pos_t) * 2 * order; // children_positions
     tree->node_size = node_size;
 
     tree->file_name = file;
@@ -60,15 +60,15 @@ void aeon_btree_node_save(aeon_btree *_tree, aeon_btree_node *_node)
     else
     {
         fgetpos(_tree->file, &node_pos);
-        _node->position = (unsigned long) node_pos.__pos;
+        _node->position = (aeon_pos_t) node_pos.__pos;
     }
 
-    fwrite(&_node->value_count, sizeof(unsigned int), 1, _tree->file);
-    fwrite(&_node->leaf, sizeof(unsigned int), 1, _tree->file);
+    fwrite(&_node->value_count, sizeof(aeon_count_t), 1, _tree->file);
+    fwrite(&_node->leaf, sizeof(uint32_t), 1, _tree->file);
     fwrite(_node->keys, sizeof(KEY_TYPE), (2 * _tree->order) - 1, _tree->file);
     fwrite(_node->values, sizeof(VALUE_TYPE), (2 * _tree->order) - 1,
             _tree->file);
-    fwrite(_node->children_positions, sizeof(unsigned long), 2 * _tree->order,
+    fwrite(_node->children_positions, sizeof(aeon_pos_t), 2 * _tree->order,
             _tree->file);
     fflush(_tree->file);
 }
@@ -77,7 +77,6 @@ void aeon_btree_node_save(aeon_btree *_tree, aeon_btree_node *_node)
 void aeon_btree_save(aeon_btree *_tree, int header_only)
 {
     aeon_btree_header header;
-    header.magic_byte = TREE_MAGIC_BYTE;
     header.order = _tree->order;
     header.node_size = _tree->node_size;
 
@@ -92,10 +91,9 @@ void aeon_btree_save(aeon_btree *_tree, int header_only)
 
     // Write the header.
     fseek(_tree->file, 0, SEEK_SET);
-    fwrite(&header.magic_byte, sizeof(char), 1, _tree->file);
-    fwrite(&header.order, sizeof(unsigned int), 1, _tree->file);
-    fwrite(&header.node_size, sizeof(unsigned int), 1, _tree->file);
-    fwrite(&header.root_position, sizeof(unsigned long), 1, _tree->file);
+    fwrite(&header.order, sizeof(uint32_t), 1, _tree->file);
+    fwrite(&header.node_size, sizeof(aeon_size_t), 1, _tree->file);
+    fwrite(&header.root_position, sizeof(aeon_pos_t), 1, _tree->file);
     fflush(_tree->file);
 }
 
@@ -103,12 +101,12 @@ void aeon_btree_save(aeon_btree *_tree, int header_only)
 void aeon_btree_node_load(aeon_btree *_tree, aeon_btree_node *_node)
 {
     fseek(_tree->file, _node->position, SEEK_SET);
-    fread(&_node->value_count, sizeof(unsigned int), 1, _tree->file);
-    fread(&_node->leaf, sizeof(unsigned int), 1, _tree->file);
+    fread(&_node->value_count, sizeof(aeon_count_t), 1, _tree->file);
+    fread(&_node->leaf, sizeof(uint32_t), 1, _tree->file);
     fread(_node->keys, sizeof(KEY_TYPE), (2 * _tree->order) - 1, _tree->file);
     fread(_node->values, sizeof(VALUE_TYPE), (2 * _tree->order) - 1,
             _tree->file);
-    fread(_node->children_positions, sizeof(unsigned long), 2 * _tree->order,
+    fread(_node->children_positions, sizeof(aeon_pos_t), 2 * _tree->order,
             _tree->file);
 }
 
@@ -119,10 +117,9 @@ aeon_btree *aeon_btree_load(char *_file, int file_length)
     aeon_btree_header header;
     aeon_btree *tree;
 
-    fread(&header.magic_byte, sizeof(char), 1, file);
-    fread(&header.order, sizeof(unsigned int), 1, file);
-    fread(&header.node_size, sizeof(unsigned int), 1, file);
-    fread(&header.root_position, sizeof(unsigned long), 1, file);
+    fread(&header.order, sizeof(uint32_t), 1, file);
+    fread(&header.node_size, sizeof(aeon_size_t), 1, file);
+    fread(&header.root_position, sizeof(aeon_pos_t), 1, file);
 
     tree = aeon_btree_create(header.order, _file, file_length);
     tree->file = file;
@@ -387,7 +384,7 @@ void aeon_btree_node_free(aeon_btree_node *_node)
     free(_node);
 }
 
-aeon_btree *aeon_btree_initialise(int order, char *_file, int file_length)
+aeon_btree *aeon_btree_initialise(uint32_t order, char *_file, int file_length)
 {
     aeon_btree *tree;
     FILE *file;

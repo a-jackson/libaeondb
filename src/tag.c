@@ -4,7 +4,7 @@
 #include "tag.h"
 #include "db.h"
 
-void *aeon_tag_create(void *_tagdb, char *_name, int name_length)
+void *aeon_tag_create(void *_tagdb, char *_name, uint32_t name_length)
 {
     aeon_tag_db *tagdb = (aeon_tag_db *) _tagdb;
     aeon_tag *tag;
@@ -72,8 +72,7 @@ void *aeon_tags_load(void *_dbhandle)
         file = fopen(tagdb_location, "rb");
     }
 
-    fread(&tag_db->header->magic_byte, sizeof(char), 1, file);
-    fread(&tag_db->header->tag_count, sizeof(unsigned int), 1, file);
+    fread(&tag_db->header->tag_count, sizeof(aeon_count_t), 1, file);
 
     if (tag_db->header->tag_count > 0)
     {
@@ -82,8 +81,8 @@ void *aeon_tags_load(void *_dbhandle)
         {
             tag_db->tags[i] = malloc(sizeof(aeon_tag));
             tag_db->tags[i]->dbhandle = dbhandle;
-            fread(&tag_db->tags[i]->tag_id, sizeof(unsigned int), 1, file);
-            fread(&tag_db->tags[i]->tag_name_length, sizeof(unsigned int), 1,
+            fread(&tag_db->tags[i]->tag_id, sizeof(uint32_t), 1, file);
+            fread(&tag_db->tags[i]->tag_name_length, sizeof(uint32_t), 1,
                     file);
             tag_db->tags[i]->tag_name = malloc(
                     sizeof(char) * tag_db->tags[i]->tag_name_length);
@@ -136,8 +135,8 @@ void aeon_tag_save(void *_tag, void *_tagdb)
     aeon_tag_header_update(tag_db->header, tag_database);
 
     fseek(tag_database, 0, SEEK_END);
-    fwrite(&tag->tag_id, sizeof(unsigned int), 1, tag_database);
-    fwrite(&tag->tag_name_length, sizeof(unsigned int), 1, tag_database);
+    fwrite(&tag->tag_id, sizeof(uint32_t), 1, tag_database);
+    fwrite(&tag->tag_name_length, sizeof(uint32_t), 1, tag_database);
     fwrite(tag->tag_name, sizeof(char), tag_db->tags[i]->tag_name_length,
             tag_database);
     fflush(tag_database);
@@ -148,7 +147,6 @@ void aeon_tag_database_initialise(char *tag_database_location)
 {
     FILE *tag_database = fopen(tag_database_location, "wb");
     aeon_tag_header header;
-    header.magic_byte = AEON_TAG_MAGIC_BYTE;
     header.tag_count = 0;
 
     aeon_tag_header_update(&header, tag_database);
@@ -159,15 +157,13 @@ aeon_tag_header aeon_tag_header_load(FILE *file)
 {
     aeon_tag_header header;
     fseek(file, 0, SEEK_SET);
-    fread(&header.magic_byte, sizeof(char), 1, file);
-    fread(&header.tag_count, sizeof(unsigned int), 1, file);
+    fread(&header.tag_count, sizeof(uint32_t), 1, file);
     return header;
 }
 
 void aeon_tag_header_update(aeon_tag_header *header, FILE *file)
 {
     fseek(file, 0, SEEK_SET);
-    fwrite(&header->magic_byte, sizeof(char), 1, file);
-    fwrite(&header->tag_count, sizeof(unsigned int), 1, file);
+    fwrite(&header->tag_count, sizeof(uint32_t), 1, file);
     fflush(file);
 }

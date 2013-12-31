@@ -2,15 +2,16 @@
 #include "query.h"
 #include "tag.h"
 #include "timestore.h"
+#include "common.h"
 
-void *aeon_query_create(void *_tag, unsigned long start_time,
-        unsigned long end_time)
+void *aeon_query_create(void *_tag, aeon_time_t start_time,
+        aeon_time_t end_time)
 {
     aeon_tag *tag = (aeon_tag *) _tag;
     aeon_query *query = malloc(sizeof(aeon_query));
-    unsigned long start_page_time = start_time
+    aeon_time_t start_page_time = start_time
             - (start_time % AEON_TIMESTORE_PAGE_SIZE);
-    unsigned long start_page_position;
+    aeon_pos_t start_page_position;
     int start_time_result;
 
     query->tag = tag;
@@ -46,13 +47,29 @@ void *aeon_query_create(void *_tag, unsigned long start_time,
     aeon_timestore_page_load(query->timestore, query->current_page,
             start_page_position);
 
+    // Move to correct value in page.
+    while (query->current_value_time < query->start_time)
+    {
+        if (aeon_timestore_getvalue(query->timestore, query->current_page,
+                query->current_page_value, &query->current_value_time,
+                query->current_value) == 0)
+        {
+            aeon_query_free(query);
+            return NULL ;
+        }
+
+        query->current_page_value++;
+    }
+
+    query->current_page_value--;
+
     return query;
 }
 
 int aeon_query_move_next(void *_query)
 {
     aeon_query *query = (aeon_query *) _query;
-    unsigned long next_page_position;
+    aeon_pos_t next_page_position;
 
     if (aeon_timestore_getvalue(query->timestore, query->current_page,
             query->current_page_value, &query->current_value_time,
@@ -81,7 +98,7 @@ int aeon_query_move_next(void *_query)
     return 1;
 }
 
-int aeon_query_current_value(void *_query, unsigned long *time, void *value)
+int aeon_query_current_value(void *_query, aeon_time_t *time, void *value)
 {
     aeon_query *query = (aeon_query *) _query;
     if (query->current_value == NULL )

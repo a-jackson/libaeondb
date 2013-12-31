@@ -1,24 +1,23 @@
 #include <stdio.h>
 #include "db.h"
+#include "common.h"
 
 #ifndef __AEON_TAG_H_
 #define __AEON_TAG_H_
 
-#define AEON_TAG_MAGIC_BYTE 0x0B
 #define AEON_TAG_DB_NAME "tags"
 
 typedef struct
 {
     aeon_dbhandle *dbhandle;
-    unsigned int tag_id;
-    unsigned int tag_name_length;
+    uint32_t tag_id;
+    uint32_t tag_name_length;
     char *tag_name;
 } aeon_tag;
 
 typedef struct
 {
-    char magic_byte;
-    unsigned int tag_count;
+    uint32_t tag_count;
 } aeon_tag_header;
 
 typedef struct
@@ -29,7 +28,7 @@ typedef struct
     char *tag_db_location;
 } aeon_tag_db;
 
-void *aeon_tag_create(void *_tagdb, char *_name, int name_length);
+void *aeon_tag_create(void *_tagdb, char *_name, uint32_t name_length);
 void *aeon_tags_load(void *_dbhandle);
 void *aeon_tag_get(void *_tagdb, char *tag);
 void aeon_tag_save(void *_tag, void *_tagdb);

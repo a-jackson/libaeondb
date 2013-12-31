@@ -1,43 +1,42 @@
 #include <stdlib.h>
+#include "common.h"
 
 #ifndef __AEON_BTREE_H_
 #define __AEON_BTREE_H_
 
-#define TREE_MAGIC_BYTE 0x0A
-#define KEY_TYPE unsigned long
-#define VALUE_TYPE unsigned long
+#define KEY_TYPE aeon_time_t
+#define VALUE_TYPE aeon_pos_t
 
 typedef struct _aeon_btree_header
 {
-    char magic_byte;
-    unsigned int order;
-    unsigned int node_size;
-    unsigned long root_position;
+    uint32_t order;
+    aeon_size_t node_size;
+    aeon_pos_t root_position;
 } aeon_btree_header;
 
 typedef struct _aeon_btree_node
 {
     KEY_TYPE* keys;
     VALUE_TYPE *values;
-    unsigned int value_count;
-    unsigned int leaf;
+    aeon_count_t value_count;
+    uint32_t leaf;
     struct _aeon_btree_node **children;
-    unsigned long position;
-    unsigned long *children_positions;
+    aeon_pos_t position;
+    aeon_pos_t *children_positions;
 } aeon_btree_node;
 
 typedef struct _aeon_btree
 {
     struct _aeon_btree_node *root;
-    unsigned int order;
-    unsigned int node_size;
+    uint32_t order;
+    aeon_size_t node_size;
     char *file_name;
     FILE *file;
 } aeon_btree;
 
 aeon_btree_node *aeon_btree_node_create(aeon_btree *tree);
 
-aeon_btree *aeon_btree_create(int order, char *_file, int file_length);
+aeon_btree *aeon_btree_create(uint32_t order, char *_file, int file_length);
 
 void aeon_btree_split(aeon_btree *_tree, aeon_btree_node *_parent,
         aeon_btree_node *_node, int median_index);
@@ -60,6 +59,6 @@ void aeon_btree_close(aeon_btree *_tree);
 int aeon_btree_node_get_value(aeon_btree *_tree, aeon_btree_node *_node,
         KEY_TYPE key, VALUE_TYPE *value);
 int aeon_btree_get_value(aeon_btree *_tree, KEY_TYPE key, VALUE_TYPE *value);
-aeon_btree *aeon_btree_initialise(int order, char *_file, int file_length);
+aeon_btree *aeon_btree_initialise(uint32_t order, char *_file, int file_length);
 
 #endif
