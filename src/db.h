@@ -7,6 +7,6 @@ typedef struct
     int db_location_length;
 } aeon_dbhandle;
 
-void *aeon_initialise(char *_location, int location_length);
+int aeon_initialise(void **dbhandle, char *_location, int location_length);
 
 #endif

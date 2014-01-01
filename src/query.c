@@ -4,15 +4,18 @@
 #include "timestore.h"
 #include "common.h"
 
-void *aeon_query_create(void *_tag, aeon_time_t start_time,
+int aeon_query_create(void **_query, void *_tag, aeon_time_t start_time,
         aeon_time_t end_time)
 {
     aeon_tag *tag = (aeon_tag *) _tag;
-    aeon_query *query = malloc(sizeof(aeon_query));
+    aeon_query *query;
     aeon_time_t start_page_time = start_time
             - (start_time % AEON_TIMESTORE_PAGE_SIZE);
     aeon_pos_t start_page_position;
     int start_time_result;
+
+    query = malloc(sizeof(aeon_query));
+    AEON_CHECK_ALLOC(query);
 
     query->tag = tag;
     query->dbhandle = tag->dbhandle;
@@ -23,7 +26,11 @@ void *aeon_query_create(void *_tag, aeon_time_t start_time,
     query->current_page_value = 0;
     query->current_value = malloc(AEON_TIMESTORE_DATA_SIZE);
     query->current_value_time = 0;
-    query->timestore = aeon_timestore_initialise(tag);
+    if (!aeon_timestore_initialise((void **)&query->timestore, tag))
+    {
+        aeon_query_free(query);
+        return -1;
+    }
 
     if (end_time > query->timestore->last_time_saved)
     {
@@ -41,7 +48,7 @@ void *aeon_query_create(void *_tag, aeon_time_t start_time,
     if (start_time_result == 0)
     {
         aeon_query_free(query);
-        return NULL ;
+        return -1;
     }
 
     aeon_timestore_page_load(query->timestore, query->current_page,
@@ -55,7 +62,7 @@ void *aeon_query_create(void *_tag, aeon_time_t start_time,
                 query->current_value) == 0)
         {
             aeon_query_free(query);
-            return NULL ;
+            return -1;
         }
 
         query->current_page_value++;
@@ -63,7 +70,9 @@ void *aeon_query_create(void *_tag, aeon_time_t start_time,
 
     query->current_page_value--;
 
-    return query;
+    *_query = query;
+
+    return 1;
 }
 
 int aeon_query_move_next(void *_query)

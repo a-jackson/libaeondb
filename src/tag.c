@@ -4,14 +4,16 @@
 #include "tag.h"
 #include "db.h"
 
-void *aeon_tag_create(void *_tagdb, char *_name, uint32_t name_length)
+int aeon_tag_create(void **_tag, void *_tagdb, char *_name, uint32_t name_length)
 {
     aeon_tag_db *tagdb = (aeon_tag_db *) _tagdb;
     aeon_tag *tag;
     char *name;
 
     tag = malloc(sizeof(aeon_tag));
+    AEON_CHECK_ALLOC(tag);
     name = malloc(name_length);
+    AEON_CHECK_ALLOC(name);
 
     memcpy(name, _name, name_length);
 
@@ -19,7 +21,9 @@ void *aeon_tag_create(void *_tagdb, char *_name, uint32_t name_length)
     tag->tag_name = name;
     tag->tag_name_length = name_length;
 
-    return tag;
+    *_tag = tag;
+
+    return 1;
 }
 
 void aeon_tag_db_free(void *_tagdb)
@@ -44,7 +48,7 @@ void aeon_tag_free(void *_tag)
     free(tag);
 }
 
-void *aeon_tags_load(void *_dbhandle)
+int aeon_tags_load(void **_tagdb, void *_dbhandle)
 {
     aeon_dbhandle *dbhandle = (aeon_dbhandle *) _dbhandle;
     char *tagdb_location;
@@ -57,10 +61,14 @@ void *aeon_tags_load(void *_dbhandle)
                     sizeof(char)
                             * (dbhandle->db_location_length
                                     + strlen(AEON_TAG_DB_NAME)));
+    AEON_CHECK_ALLOC(tagdb_location);
+
     strcpy(tagdb_location, dbhandle->db_location);
     strcat(tagdb_location, AEON_TAG_DB_NAME);
 
     tag_db = malloc(sizeof(aeon_tag_db));
+    AEON_CHECK_ALLOC(tag_db);
+
     tag_db->dbhandle = dbhandle;
     tag_db->tag_db_location = tagdb_location;
     tag_db->header = malloc(sizeof(aeon_tag_header));
@@ -92,10 +100,12 @@ void *aeon_tags_load(void *_dbhandle)
     }
 
     fclose(file);
-    return tag_db;
+    *_tagdb = tag_db;
+
+    return 1;
 }
 
-void *aeon_tag_get(void *_tagdb, char *tag)
+int aeon_tag_get(void **_tag, void *_tagdb, char *tag)
 {
     aeon_tag_db *tagdb = (aeon_tag_db *) _tagdb;
     int i;
@@ -104,14 +114,16 @@ void *aeon_tag_get(void *_tagdb, char *tag)
     {
         if (strcmp(tag, tagdb->tags[i]->tag_name) == 0)
         {
-            return tagdb->tags[i];
+            *_tag = tagdb->tags[i];
+            return 1;
         }
     }
 
-    return NULL ;
+    *_tag = NULL;
+    return 0;
 }
 
-void aeon_tag_save(void *_tag, void *_tagdb)
+int aeon_tag_save(void *_tag, void *_tagdb)
 {
     FILE *tag_database;
     aeon_tag **existing_tags;
@@ -121,6 +133,8 @@ void aeon_tag_save(void *_tag, void *_tagdb)
 
     existing_tags = tag_db->tags;
     tag_db->tags = malloc(sizeof(aeon_tag *) * (tag_db->header->tag_count + 1));
+    AEON_CHECK_ALLOC(tag_db->tags);
+
     for (i = 0; i < tag_db->header->tag_count; i++)
     {
         tag_db->tags[i] = existing_tags[i];
@@ -141,6 +155,8 @@ void aeon_tag_save(void *_tag, void *_tagdb)
             tag_database);
     fflush(tag_database);
     fclose(tag_database);
+
+    return 1;
 }
 
 void aeon_tag_database_initialise(char *tag_database_location)

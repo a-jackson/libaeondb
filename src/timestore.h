@@ -33,7 +33,7 @@ typedef struct
     aeon_pos_t current_page_location;
 } aeon_timestore;
 
-void *aeon_timestore_initialise(void *_tag);
+int aeon_timestore_initialise(void **_timestore, void *_tag);
 void aeon_timestore_open(aeon_timestore *_timestore);
 void aeon_timestore_update_header(aeon_timestore *_timestore);
 void aeon_timestore_update_page_header(aeon_timestore *_timestore,

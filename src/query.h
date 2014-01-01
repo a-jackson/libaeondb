@@ -20,7 +20,7 @@ typedef struct
     void *current_value;
 } aeon_query;
 
-void *aeon_query_create(void *_tag, aeon_time_t start_time, aeon_time_t end_time);
+int aeon_query_create(void **_query, void *_tag, aeon_time_t start_time, aeon_time_t end_time);
 int aeon_query_move_next(void *_query);
 int aeon_query_current_value(void *_query, aeon_time_t *time, void *value);
 void aeon_query_free(void *_query);

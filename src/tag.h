@@ -28,10 +28,10 @@ typedef struct
     char *tag_db_location;
 } aeon_tag_db;
 
-void *aeon_tag_create(void *_tagdb, char *_name, uint32_t name_length);
-void *aeon_tags_load(void *_dbhandle);
-void *aeon_tag_get(void *_tagdb, char *tag);
-void aeon_tag_save(void *_tag, void *_tagdb);
+int aeon_tag_create(void **_tag, void *_tagdb, char *_name, uint32_t name_length);
+int aeon_tags_load(void **_tagdb, void *_dbhandle);
+int aeon_tag_get(void **_tag, void *_tagdb, char *tag);
+int aeon_tag_save(void *_tag, void *_tagdb);
 void aeon_tag_free(void *_tag);
 void aeon_tag_database_initialise(char *tag_database_location);
 aeon_tag_header aeon_tag_header_load(FILE *file);

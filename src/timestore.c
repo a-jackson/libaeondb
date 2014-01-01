@@ -4,19 +4,24 @@
 #include "btree.h"
 #include "tag.h"
 
-void *aeon_timestore_initialise(void *_tag)
+int aeon_timestore_initialise(void **_timestore, void *_tag)
 {
     aeon_tag *tag = (aeon_tag *) _tag;
-    aeon_timestore *timestore = malloc(sizeof(aeon_timestore));
+    aeon_timestore *timestore;
     char tag_id[11];
     int tag_length;
     char *timestore_location;
     char *index_location;
 
+    timestore = malloc(sizeof(aeon_timestore));
+    AEON_CHECK_ALLOC(timestore);
+
     tag_length = sprintf(tag_id, "%d", tag->tag_id);
 
     timestore_location = malloc(
             sizeof(char) * (tag->dbhandle->db_location_length + tag_length));
+    AEON_CHECK_ALLOC(timestore_location);
+
     memcpy(timestore_location, tag->dbhandle->db_location,
             tag->dbhandle->db_location_length);
     strcat(timestore_location, tag_id);
@@ -24,6 +29,8 @@ void *aeon_timestore_initialise(void *_tag)
     index_location = malloc(
             sizeof(char)
                     * (tag->dbhandle->db_location_length + tag_length + 6));
+    AEON_CHECK_ALLOC(index_location);
+
     memcpy(index_location, tag->dbhandle->db_location,
             tag->dbhandle->db_location_length);
     strcat(index_location, tag_id);
@@ -45,7 +52,9 @@ void *aeon_timestore_initialise(void *_tag)
     aeon_btree_open(timestore->index, 0);
     aeon_timestore_open(timestore);
 
-    return timestore;
+    *_timestore = timestore;
+
+    return 1;
 }
 
 void aeon_timestore_open(aeon_timestore *_timestore)
