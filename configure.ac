@@ -7,6 +7,9 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/common.h])
 AM_CONFIG_HEADER(config.h)
 
+AC_SUBST([LIBAEONDB_SO_VERSION], [0:0:0])
+AC_SUBST([LIBAEONDB_API_VERSION], [0.1])
+
 LT_INIT
 
 # Checks for programs.
