@@ -79,3 +79,7 @@ ltmain.sh
 .deps
 Makefile
 
+*.lo
+*.la
+*~
+.libs
