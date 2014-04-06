@@ -53,3 +53,33 @@ local.properties
 
 # TeXlipse plugin
 .texlipse
+
+# http://www.gnu.org/software/automake
+
+Makefile.in
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/aclocal.m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+/stamp-h1
+
+config.log
+config.status
+config.sub
+config.guess
+config.h
+libtool
+ltmain.sh
+.deps
+Makefile
+
+*.lo
+*.la
+*~
+.libs
